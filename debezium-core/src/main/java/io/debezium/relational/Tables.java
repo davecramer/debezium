@@ -64,6 +64,7 @@ public final class Tables {
      */
     @FunctionalInterface
     public static interface ColumnNameFilter {
+
         /**
          * Determine whether the named column should be included in the table's {@link Schema} definition.
          *
@@ -76,6 +77,18 @@ public final class Tables {
          * @return {@code true} if the table should be included, or {@code false} if the table should be excluded
          */
         boolean matches(String catalogName, String schemaName, String tableName, String columnName);
+
+        public static ColumnNameFilter getInstance(String excludedColumnPatterns) {
+            return new ColumnNameFilter() {
+
+                Predicate<ColumnId> delegate = Selectors.excludeColumns(excludedColumnPatterns);
+
+                @Override
+                public boolean matches(String catalogName, String schemaName, String tableName, String columnName) {
+                    return delegate.test(new ColumnId(new TableId(catalogName, schemaName, tableName), columnName));
+                }
+            };
+        }
     }
 
     private final FunctionalReadWriteLock lock = FunctionalReadWriteLock.reentrant();
